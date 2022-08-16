@@ -1,13 +1,17 @@
 package com.aman.roomdatabase
 
+import android.app.AlertDialog
 import android.os.AsyncTask
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MenuInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.aman.roomdatabase.databinding.FragmentNotesBinding
+import com.aman.roomdatabase.databinding.LayoutItemBinding
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -46,17 +50,22 @@ class NotesFragment : Fragment(), NotesClick {
         adapter = NotesAdapter(notesArray, this)
         binding.recycler.layoutManager = LinearLayoutManager(mainActivity)
         binding.recycler.adapter = adapter
-        getNotes()
         binding.fabAdd.setOnClickListener {
             mainActivity.navController.navigate(R.id.addUpdateNotesFragment)
         }
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        notesArray.clear()
+        getNotes()
+    }
+
     private fun getNotes() {
         class getData : AsyncTask<Void, Void, Void>(){
             override fun doInBackground(vararg p0: Void?): Void? {
-                notesArray = mainActivity.userRoomDatabase.notesDao().getAll() as ArrayList<Notes>
+                notesArray.addAll(mainActivity.userRoomDatabase.notesDao().getAll() as ArrayList<Notes>)
                 return null
             }
 
@@ -64,11 +73,24 @@ class NotesFragment : Fragment(), NotesClick {
                 super.onPostExecute(result)
                 adapter.notifyDataSetChanged()
             }
-
-
         }
         getData().execute()
+    }
 
+    private fun deleteNotes(notes:Notes) {
+        class getData : AsyncTask<Notes, Void, Void>(){
+            override fun doInBackground(vararg p0: Notes?): Void? {
+                mainActivity.userRoomDatabase.notesDao().delete(notes)
+                return null
+            }
+
+            override fun onPostExecute(result: Void?) {
+                super.onPostExecute(result)
+                notesArray.clear()
+                getNotes()
+            }
+        }
+        getData().execute(notes)
     }
 
     companion object {
@@ -91,7 +113,30 @@ class NotesFragment : Fragment(), NotesClick {
             }
     }
 
-    override fun NotesClicked(notes: Notes) {
+    override fun NotesClicked(notes: Notes, holder: NotesAdapter.ViewHolder) {
+        var popupMenu = PopupMenu(mainActivity,holder.binding.ivMenu)
+        popupMenu.menuInflater.inflate(R.menu.menu, popupMenu.menu)
+        popupMenu.show()
+        popupMenu.setOnMenuItemClickListener {
+            when(it.itemId){
+                R.id.delete->{
+                   AlertDialog.Builder(mainActivity).apply {
+                       setTitle(resources.getString(R.string.delete_notes))
+                       setMessage(resources.getString(R.string.delete_message))
+                       setPositiveButton(resources.getString(R.string.yes)){_,_->
+                           deleteNotes(notes)
+                       }
+                       setNegativeButton(resources.getString(R.string.no)){_,_-> }
+                   }.show()
+                }
+                R.id.update->{
+                    var bundle = Bundle()
+                    bundle.putInt(mainActivity.id, notes.id)
+                    mainActivity.navController.navigate(R.id.addUpdateNotesFragment, bundle)
+                }
+            }
+            return@setOnMenuItemClickListener true
+        }
 
     }
 }

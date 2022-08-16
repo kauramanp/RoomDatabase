@@ -19,8 +19,8 @@ class NotesAdapter(var arrayList: ArrayList<Notes>, var click: NotesClick) :Recy
             binding.tvTitle.setText(arrayList[position].title)
             binding.tvDescription.setText(arrayList[position].description)
         }
-        holder.binding.root.setOnClickListener{
-            click.NotesClicked(arrayList[position])
+        holder.binding.ivMenu.setOnClickListener{
+            click.NotesClicked(arrayList[position], holder)
         }
     }
 

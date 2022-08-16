@@ -32,10 +32,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:singleLine="true"
-        android:maxLines="1"
-        android:maxLength="30"
+        android:minLines="10"
         android:id="@+id/etDescription"
-        android:inputType="textCapSentences"
+        android:gravity="top"
+        android:inputType="textCapSentences|textMultiLine"
         android:hint="@string/enter_description" />
 
     <CheckBox

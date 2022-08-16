@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
+    var id: String?="id"
     lateinit var userRoomDatabase: NotesRoomDatabase
     public var dateFormat = SimpleDateFormat("dd MMM yyyy")
     lateinit var navController: NavController

@@ -27,6 +27,9 @@ class AddUpdateNotesFragment : Fragment() {
     private var param2: String? = null
     private lateinit var binding: FragmentAddUpdateNotesBinding
     private lateinit var mainActivity: MainActivity
+    private  var notesId: Int = -1
+    private  var isUpdate: Boolean = false
+    private  var notes: Notes = Notes()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +37,9 @@ class AddUpdateNotesFragment : Fragment() {
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
+            notesId = it.getInt(mainActivity.id, -1)
+            isUpdate = true
+            getNotes()
         }
     }
 
@@ -52,20 +58,47 @@ class AddUpdateNotesFragment : Fragment() {
                 binding.etDescription.error = resources.getString(R.string.add_description)
                 binding.etDescription.requestFocus()
             }else{
-                save()
-            }
-        }
-        return binding.root
-    }
-
-    private fun save() {
-        class saveRoom : AsyncTask<Void, Void, Void>(){
-            override fun doInBackground(vararg p0: Void?): Void? {
                 var notes =  Notes()
                 notes.title = binding.etTitle.text.toString()
                 notes.description = binding.etDescription.text.toString()
                 notes.isCompleted = binding.cbIsCompleted.isChecked
                 notes.date = mainActivity.dateFormat.format(Calendar.getInstance().time)
+                if(isUpdate) {
+                    notes.date = this.notes.date
+                    notes.id = notesId
+                    update(notes)
+                }
+                else{
+                    notes.date = mainActivity.dateFormat.format(Calendar.getInstance().time)
+
+                    save(notes)
+                }
+            }
+        }
+        return binding.root
+    }
+
+    private fun getNotes() {
+        class saveRoom : AsyncTask<Void, Void, Void>(){
+            override fun doInBackground(vararg p0: Void?): Void? {
+
+              notes =  mainActivity.userRoomDatabase.notesDao().findNotesByID(notesId)?:Notes()
+                return null
+            }
+            override fun onPostExecute(result: Void?) {
+                super.onPostExecute(result)
+                binding.etDescription.setText(notes.description)
+                binding.etTitle.setText(notes.title)
+                binding.cbIsCompleted.isChecked = notes.isCompleted?:false
+            }
+        }
+        saveRoom().execute()
+    }
+
+    private fun save(notes: Notes) {
+        class saveRoom : AsyncTask<Void, Void, Void>(){
+            override fun doInBackground(vararg p0: Void?): Void? {
+
                 mainActivity.userRoomDatabase.notesDao().insertAll(notes)
                 return null
             }
@@ -76,6 +109,26 @@ class AddUpdateNotesFragment : Fragment() {
             }
         }
         saveRoom().execute()
+    }
+
+    private fun update(notes: Notes) {
+        class updateDb : AsyncTask<Notes, Void, Void>(){
+//            override fun doInBackground(vararg p0: Void?): Void? {
+//                mainActivity.userRoomDatabase.notesDao().update(notes)
+//                return null
+//            }
+            override fun onPostExecute(result: Void?) {
+                super.onPostExecute(result)
+               Toast.makeText(mainActivity, resources.getString(R.string.updated), Toast.LENGTH_LONG).show()
+                mainActivity.navController.popBackStack()
+            }
+
+            override fun doInBackground(vararg p0: Notes?): Void? {
+                p0.get(0)?.let { mainActivity.userRoomDatabase.notesDao().update(it) }
+                return  null
+            }
+        }
+        updateDb().execute(notes)
     }
 
     companion object {
